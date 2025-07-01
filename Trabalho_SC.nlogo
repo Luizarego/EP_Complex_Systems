@@ -1,33 +1,112 @@
 breed [pombos pombo]
 breed [carrinhos carrinho]
 breed [comidas comida]
+breed [carros-rua carro-rua]
+breed [gatos gato]
+gatos-own [
+  energia
+  sexo
+]
+globals [
+  velocidade-gato
+  velocidade-pombo
+]
 
 pombos-own [
   sexo ; "macho" ou "fêmea"
   fome ; nível de fome
 ]
 
+to pintar-fundo
+  ask patches [
+    if abs pycor <= 2 [ ;; faixa da rua
+      ifelse (pycor mod 3) = 0 [
+        set pcolor yellow
+      ] [
+        set pcolor gray
+      ]
+    ]
+    if pycor < -2 [ set pcolor gray + 2 ] ;; calçada inferior
+    if pycor > 2 [ set pcolor gray + 2 ] ;; calçada superior
+  ]
+end
+
+
 to setup
   clear-all
+  set velocidade-gato 2.1
+  set velocidade-pombo 2.1
   setup-carrinhos
+  pintar-fundo
   setup-pombos
+  spawn-carro-rua
+  setup-gatos
   reset-ticks
+end
+
+
+to setup-gatos
+  create-gatos numero-inicial-gatos [
+    set sexo one-of ["macho" "fêmea"]
+    setxy random-xcor random-ycor
+    set shape "cat"
+     set color ifelse-value (sexo = "macho") [orange] [magenta]
+    set size 1.5
+    set energia 50
+  ]
 end
 
 to setup-carrinhos
   create-carrinhos number-of-carrinhos [
-    setxy random-xcor random-ycor
-    set shape "car"
+    let spawn-patch one-of patches with [ abs pycor >= 3 ] ; só calçada
+    move-to spawn-patch
+    set shape "barraquinha"
     set color red
+    set size 1.5
   ]
 end
+
+to spawn-carro-rua
+  if random-float 1 < 0.002 [  ; chance de spawn por tick
+    let faixa-y one-of [-2 -1 0 1 2]  ; linha dentro da rua (horizontal)
+    create-carros-rua 1 [
+      setxy min-pxcor faixa-y  ; aparece no canto esquerdo da rua
+      set heading 90  ; vai para a direita
+      set shape "car"
+      set color black
+      set size 2
+    ]
+  ]
+end
+
+
+
+
+to mover-carros-rua
+  ask carros-rua [
+    fd 2  ; anda rápido
+
+    ;; checa colisão com pombo
+    let pomba-collide one-of pombos-here
+    if pomba-collide != nobody [
+      ask pomba-collide [ die ]  ; mata o pombo
+    ]
+
+    ;; se sair da tela, morre
+    if xcor > max-pxcor [
+      die
+    ]
+  ]
+end
+
+
 
 to setup-pombos
   create-pombos number-of-pombos [
     setxy random-xcor random-ycor
-    set shape "bird"
+    set shape "pombo"
     set color gray
-    set fome 100
+    set fome 15
     set sexo one-of ["macho" "fêmea"]
   ]
 end
@@ -47,26 +126,78 @@ to carrinhos-soltam-comida
   ]
 end
 
-to movimento-dos-pombos
-  ask pombos [
-    let alvo min-one-of comidas [distance myself]
-
-    ifelse alvo != nobody and distance alvo < 3 [
-      face alvo
-      fd 1
-      if distance alvo < 1 [
-        ask alvo [ die ] ; come a comida
-        set fome 100
-      ]
-    ] [
+to mover-carrinhos
+  if ticks mod 30 = 0 [  ;; só executa a cada 30 ticks
+    ask carrinhos [
       rt random 30
       lt random 30
-      fd 1
+
+      let target patch-ahead 1
+      ifelse target != nobody and abs [pycor] of target >= 3 [
+        fd 1
+      ][
+        rt 180  ; vira de volta se o patch à frente não for calçada
+      ]
+
+      ; Rebater nas bordas
+      if xcor >= max-pxcor or xcor <= min-pxcor [ rt 180 fd 1 ]
+      if ycor >= max-pycor or ycor <= min-pycor [ rt 180 fd 1 ]
+    ]
+  ]
+end
+
+
+
+to movimento-dos-pombos
+  ask pombos [
+    let gato-perto min-one-of gatos [distance myself]
+
+    ifelse gato-perto != nobody and distance gato-perto < 5 [
+      face gato-perto
+      rt 180
+      fd velocidade-gato * 1.5
+    ] [
+      let r random-float 1
+      if r < 0.4 [
+        let alvo-comida min-one-of comidas [distance myself]
+        ifelse alvo-comida != nobody [
+          face alvo-comida
+          fd velocidade-pombo
+          if distance alvo-comida < 1 [
+            ask alvo-comida [ die ]
+            set fome 100
+          ]
+        ] [
+          mover-aleatorio-pombo
+        ]
+      ] ifelse r < 0.7 [
+        let alvo-pombo min-one-of pombos with [sexo != [sexo] of myself] [distance myself]
+        ifelse alvo-pombo != nobody [
+          face alvo-pombo
+          fd velocidade-pombo
+        ] [
+          mover-aleatorio-pombo
+        ]
+      ] [
+        mover-aleatorio-pombo
+      ]
       set fome fome - 1
     ]
   ]
 end
 
+
+to mover-aleatorio-pombo
+  rt random 30
+  lt random 30
+  fd velocidade-pombo
+end
+
+to mover-aleatorio-gato
+  rt random 30
+  lt random 30
+  fd velocidade-gato
+end
 
 to decaimento-da-comida
   ask comidas [
@@ -79,36 +210,91 @@ end
 to reproduzir
   ask pombos with [sexo = "fêmea"] [
     let parceiro one-of pombos-here with [sexo = "macho"]
-    if parceiro != nobody and random-float 1 < probabilidade-reproducao [
+    if parceiro != nobody and random-float 1 < probabilidade-reproducao-pombos and fome > 7 [
       hatch 1 [
         set sexo one-of ["macho" "fêmea"]
-        set fome 100
+        set fome 6
+      ]
+    ]
+  ]
+end
+
+to comportamento-dos-gatos
+  ask gatos [
+    let r random-float 1
+
+    ;; SE tiver energia suficiente para reprodução E chance for < 0.4 (40%)
+    ifelse energia >= 20 and r < 0.4 [
+      let parceiro-proximo min-one-of gatos with [sexo != [sexo] of myself] [distance myself]
+      ifelse parceiro-proximo != nobody [
+        face parceiro-proximo
+        fd velocidade-gato
+      ] [
+        mover-aleatorio-gato
+      ]
+
+    ] [  ;; Caso contrário: caçar pombos
+      let alvo min-one-of pombos [distance myself]
+      ifelse alvo != nobody [
+        face alvo
+        fd velocidade-gato
+        if distance alvo < 1 [
+          ask alvo [ die ]
+          set energia energia + 20
+        ]
+      ] [
+        mover-aleatorio-gato
+      ]
+    ]
+
+    set energia energia - 1
+    if energia <= 0 [ die ]
+  ]
+end
+
+
+
+to reproduzir-gatos
+  ask gatos with [sexo = "fêmea" and energia > 35] [
+    let parceiro one-of gatos-here with [sexo = "macho" and energia > 35]
+    if parceiro != nobody and random-float 1 < probabilidade-reproducao-gatos [
+      hatch 1 [
+        set sexo one-of ["macho" "fêmea"]
+        set shape "cat"
+         set color ifelse-value (sexo = "macho") [orange] [magenta]
+        set size 1.5
+        set energia 34
       ]
     ]
   ]
 end
 
 
+
 to go
-  if not any? pombos [ stop ]
+  if not any? pombos and not any? gatos [ stop ]
   carrinhos-soltam-comida
+  mover-carrinhos
   movimento-dos-pombos
   reproduzir
+  spawn-carro-rua
+  mover-carros-rua
   decaimento-da-comida
+  comportamento-dos-gatos
+  reproduzir-gatos
   tick
 end
-
 
 
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-647
-448
+799
+600
 -1
 -1
-13.0
+17.61
 1
 10
 1
@@ -137,7 +323,7 @@ number-of-carrinhos
 number-of-carrinhos
 0
 10
-3.0
+6.0
 1
 1
 NIL
@@ -152,7 +338,7 @@ number-of-pombos
 number-of-pombos
 1
 20
-5.0
+14.0
 1
 1
 NIL
@@ -167,7 +353,7 @@ taxa-de-comida
 taxa-de-comida
 0
 1
-0.5
+1.0
 0.1
 1
 NIL
@@ -176,23 +362,23 @@ HORIZONTAL
 SLIDER
 22
 223
-196
+198
 256
-probabilidade-reproducao
-probabilidade-reproducao
+probabilidade-reproducao-pombos
+probabilidade-reproducao-pombos
 0
 1
-0.5
+0.3
 0.1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-708
-59
-772
-92
+850
+65
+914
+98
 Setup
 setup
 NIL
@@ -206,10 +392,10 @@ NIL
 1
 
 BUTTON
-740
-144
-803
-177
+851
+122
+914
+155
 Go
 go
 NIL
@@ -223,11 +409,11 @@ NIL
 1
 
 PLOT
-940
-81
-1140
-231
-População de Pombos
+996
+36
+1278
+186
+População de Pombos e Gatos
 NIL
 NIL
 0.0
@@ -236,9 +422,57 @@ NIL
 10.0
 true
 false
-"" "set-current-plot \"População de Pombos\"\nset-current-plot-pen \"Pombos\"\nplot count pombos"
+"" "set-current-plot-pen \"pombos\"\nplot count pombos\n\nset-current-plot-pen \"gatos\"\nplot count gatos"
 PENS
-"Pombos" 1.0 0 -7500403 true "" ""
+"pombos" 1.0 0 -7500403 true "" ""
+"gatos" 1.0 0 -2674135 true "" ""
+
+BUTTON
+852
+176
+915
+209
+Run
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+22
+326
+199
+359
+numero-inicial-gatos
+numero-inicial-gatos
+0
+50
+4.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+23
+277
+198
+310
+probabilidade-reproducao-gatos
+probabilidade-reproducao-gatos
+0
+1
+0.2
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -292,6 +526,24 @@ true
 0
 Polygon -7500403 true true 150 0 0 150 105 150 105 293 195 293 195 150 300 150
 
+barraquinha
+true
+0
+Rectangle -2674135 true false 60 90 225 240
+Circle -1184463 true false 45 60 60
+Circle -1184463 true false 90 60 60
+Circle -1184463 true false 135 60 60
+Circle -1184463 true false 180 60 60
+Circle -1184463 true false 60 30 60
+Circle -1184463 true false 105 30 60
+Circle -1184463 true false 150 30 60
+Circle -1184463 true false 75 15 60
+Circle -1184463 true false 120 15 60
+Rectangle -16777216 true false 105 60 180 75
+Rectangle -1 true false 90 135 195 165
+Circle -7500403 true true 71 221 67
+Circle -7500403 true true 146 221 67
+
 box
 false
 0
@@ -332,6 +584,14 @@ Circle -16777216 true false 30 180 90
 Polygon -16777216 true false 162 80 132 78 134 135 209 135 194 105 189 96 180 89
 Circle -7500403 true true 47 195 58
 Circle -7500403 true true 195 195 58
+
+cat
+false
+0
+Polygon -16777216 true false 253 133 245 131 245 133
+Polygon -7500403 true true 0 195 15 180 30 176 38 178 38 190 20 211 20 242 27 250 38 251 40 245 31 238 31 215 60 191 68 183 75 194 66 213 65 228 82 246 84 253 100 252 103 246 77 224 79 216 100 192 98 181 119 186 143 187 160 180 166 195 172 198 173 223 167 236 160 233 154 250 169 249 178 232 186 225 198 245 200 256 217 256 219 247 207 243 195 215 192 183 210 169 227 149 242 129 259 130 270 120 270 120 270 120 270 120 270 105 270 90 270 90
+Polygon -7500403 true true 0 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 270 90 269 103 269 113
+Polygon -7500403 true true 225 120 240 60 255 105 255 105 270 60 270 105 225 105 240 105
 
 circle
 false
@@ -469,6 +729,27 @@ Polygon -7500403 true true 135 105 90 60 45 45 75 105 135 135
 Polygon -7500403 true true 165 105 165 135 225 105 255 45 210 60
 Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
 
+pombo
+true
+0
+Rectangle -13345367 true false 135 75 135 75
+Rectangle -13345367 true false 105 75 105 75
+Rectangle -10899396 true false 90 75 90 75
+Circle -7500403 true true 60 45 90
+Circle -16777216 true false 105 60 0
+Rectangle -16777216 true false 105 60 105 60
+Circle -16777216 true false 105 60 0
+Circle -16777216 true false 60 60 30
+Circle -16777216 true false 105 60 30
+Rectangle -955883 true false 30 90 75 105
+Circle -7500403 true true 60 120 150
+Rectangle -955883 true false 105 255 120 285
+Rectangle -955883 true false 150 255 165 285
+Rectangle -955883 true false 90 285 105 285
+Rectangle -955883 true false 90 285 90 285
+Rectangle -955883 true false 90 270 105 285
+Rectangle -955883 true false 165 270 180 285
+
 sheep
 false
 15
@@ -568,13 +849,6 @@ Line -7500403 true 216 40 79 269
 Line -7500403 true 40 84 269 221
 Line -7500403 true 40 216 269 79
 Line -7500403 true 84 40 221 269
-
-wolf
-false
-0
-Polygon -16777216 true false 253 133 245 131 245 133
-Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
-Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
 
 x
 false
