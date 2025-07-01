@@ -61,7 +61,7 @@ to setup-carrinhos
     let spawn-patch one-of patches with [ abs pycor >= 3 ] ; só calçada
     move-to spawn-patch
     set shape "barraquinha"
-    set color red
+
     set size 1.5
   ]
 end
@@ -73,7 +73,6 @@ to spawn-carro-rua
       setxy min-pxcor faixa-y  ; aparece no canto esquerdo da rua
       set heading 90  ; vai para a direita
       set shape "car"
-      set color black
       set size 2
     ]
   ]
@@ -165,7 +164,7 @@ to movimento-dos-pombos
           fd velocidade-pombo
           if distance alvo-comida < 1 [
             ask alvo-comida [ die ]
-            set fome 100
+            set fome 15
           ]
         ] [
           mover-aleatorio-pombo
@@ -263,7 +262,7 @@ to reproduzir-gatos
         set shape "cat"
          set color ifelse-value (sexo = "macho") [orange] [magenta]
         set size 1.5
-        set energia
+        set energia 34
       ]
     ]
   ]
@@ -353,7 +352,7 @@ taxa-de-comida
 taxa-de-comida
 0
 1
-1.0
+0.3
 0.1
 1
 NIL
@@ -413,7 +412,7 @@ PLOT
 36
 1278
 186
-População de Pombos e Gatos
+População de Pombos e Gatos x # de Comida
 NIL
 NIL
 0.0
@@ -422,10 +421,11 @@ NIL
 10.0
 true
 false
-"" "set-current-plot-pen \"pombos\"\nplot count pombos\n\nset-current-plot-pen \"gatos\"\nplot count gatos"
+"" "set-current-plot-pen \"pombos\"\nplot count pombos\n\nset-current-plot-pen \"gatos\"\nplot count gatos\n\nset-current-plot-pen \"comidas\"\nplot count comidas"
 PENS
 "pombos" 1.0 0 -7500403 true "" ""
 "gatos" 1.0 0 -2674135 true "" ""
+"comidas" 1.0 0 -955883 true "" ""
 
 BUTTON
 852
