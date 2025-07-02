@@ -246,7 +246,7 @@ to comportamento-dos-gatos
       lt random 30
       fd velocidade-gato
     ]
-    set energia energia - 1.9
+    set energia energia - 1.5
     if energia <= 0 [ die ]
   ]
 end
@@ -433,10 +433,10 @@ NIL
 1
 
 PLOT
-950
-53
-1278
-223
+936
+64
+1243
+234
 População de Pombos e Gatos
 NIL
 NIL
@@ -499,10 +499,10 @@ NIL
 HORIZONTAL
 
 PLOT
-949
-234
-1277
-405
+935
+245
+1244
+416
 # de Comida
 NIL
 NIL
@@ -532,10 +532,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-902
-434
-1010
-479
+935
+422
+1031
+467
 NIL
 mortes-por-carro
 17
@@ -544,9 +544,9 @@ mortes-por-carro
 
 MONITOR
 1037
-453
-1143
-498
+422
+1129
+467
 NIL
 mortes-por-fome
 17
@@ -554,10 +554,10 @@ mortes-por-fome
 11
 
 MONITOR
-1211
-456
-1315
-501
+1135
+422
+1229
+467
 NIL
 mortes-por-gato
 17
@@ -565,10 +565,10 @@ mortes-por-gato
 11
 
 MONITOR
-857
-369
-947
-414
+1248
+114
+1330
+159
 NIL
 count pombos
 17
@@ -576,10 +576,10 @@ count pombos
 11
 
 MONITOR
-855
-305
-934
-350
+1247
+66
+1330
+111
 NIL
 count gatos
 17

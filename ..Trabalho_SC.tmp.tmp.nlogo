@@ -246,7 +246,7 @@ to comportamento-dos-gatos
       lt random 30
       fd velocidade-gato
     ]
-    set energia energia - 1.9
+    set energia energia - 1.5
     if energia <= 0 [ die ]
   ]
 end
@@ -284,7 +284,7 @@ to entrada-de-agentes
 
   ;; 0.5% de chance de entrar 1 novo gato
   if random-float 1 < 0.005 and count gatos < 50[
-    create-gatos  [
+    create-gatos 4 [
       set sexo one-of ["macho" "fêmea"]
       set shape "cat"
       set color ifelse-value (sexo = "macho") [orange] [magenta]
@@ -433,10 +433,10 @@ NIL
 1
 
 PLOT
-950
-53
-1278
-223
+936
+64
+1243
+234
 População de Pombos e Gatos
 NIL
 NIL
@@ -499,10 +499,10 @@ NIL
 HORIZONTAL
 
 PLOT
-949
-234
-1277
-405
+935
+245
+1244
+416
 # de Comida
 NIL
 NIL
@@ -532,10 +532,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-902
-434
-1010
-479
+935
+422
+1031
+467
 NIL
 mortes-por-carro
 17
@@ -543,10 +543,10 @@ mortes-por-carro
 11
 
 MONITOR
-1037
-453
-1143
-498
+988
+471
+1094
+516
 NIL
 mortes-por-fome
 17
@@ -565,10 +565,10 @@ mortes-por-gato
 11
 
 MONITOR
-857
-369
-947
-414
+1248
+114
+1330
+159
 NIL
 count pombos
 17
@@ -576,10 +576,10 @@ count pombos
 11
 
 MONITOR
-855
-305
-934
-350
+1251
+64
+1330
+109
 NIL
 count gatos
 17
