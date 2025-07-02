@@ -284,7 +284,7 @@ to entrada-de-agentes
 
   ;; 0.5% de chance de entrar 1 novo gato
   if random-float 1 < 0.005 and count gatos < 50[
-    create-gatos 4 [
+    create-gatos  [
       set sexo one-of ["macho" "fêmea"]
       set shape "cat"
       set color ifelse-value (sexo = "macho") [orange] [magenta]
