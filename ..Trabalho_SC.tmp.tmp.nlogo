@@ -235,7 +235,7 @@ to comportamento-dos-gatos
       lt random 30
       fd velocidade-gato
     ]
-    set energia energia - 0.7
+    set energia energia -
     if energia <= 0 [ die ]
   ]
 end
