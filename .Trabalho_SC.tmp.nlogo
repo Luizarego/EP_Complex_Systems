@@ -235,7 +235,7 @@ to comportamento-dos-gatos
       lt random 30
       fd velocidade-gato
     ]
-    set energia energia - 0.7
+    set energia energia - 2.2
     if energia <= 0 [ die ]
   ]
 end
@@ -324,8 +324,8 @@ SLIDER
 number-of-pombos
 number-of-pombos
 1
-20
-14.0
+80
+80.0
 1
 1
 NIL
@@ -340,7 +340,7 @@ taxa-de-comida
 taxa-de-comida
 0
 1
-0.7
+1.0
 0.1
 1
 NIL
@@ -355,7 +355,7 @@ probabilidade-reproducao-pombos
 probabilidade-reproducao-pombos
 0
 1
-0.3
+0.5
 0.1
 1
 NIL
@@ -440,7 +440,7 @@ numero-inicial-gatos
 numero-inicial-gatos
 0
 50
-6.0
+5.0
 1
 1
 NIL
@@ -455,7 +455,7 @@ probabilidade-reproducao-gatos
 probabilidade-reproducao-gatos
 0
 1
-0.3
+0.5
 0.1
 1
 NIL
